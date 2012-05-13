@@ -21,13 +21,17 @@ public class Aaron {
 		private int[][] used = new int[4][4];
 		private Collection<Position> allOpenPositions = new CopyOnWriteArrayList<Position>();
 		private Map<Character,Collection<Position>> boardLetter = new HashMap<Character, Collection<Position>>(30);
+		/*
 		public char charAt(Position position) {
 			return board[position.y][position.x];
 		}
+		*/
 		public void setChar(Position position, char ch) {
+			/*
 			if(ch==0&&board[position.y][position.x]==0||ch!=0&&board[position.y][position.x]!=0) {
 				throw new IllegalStateException();
 			}
+			*/
 			board[position.y][position.x]=ch;
 		}
 		public Board() {
@@ -75,26 +79,26 @@ public class Aaron {
 			used[position.y][position.x]=wordNum;
 			return old;
 		}
-		public void recurse(int wordNum, String word, int pos, Position last) {
+		public boolean recurse(int wordNum, String word, int pos, Position last, boolean findOne) {
 			//System.out.println(wordNum + ", " + pos);
 			if(pos==word.length()) {
 				callback.run(wordNum+1);
-				return;
+				return true;
 			}
 			char letter=word.charAt(pos);
 			Collection<Position> positionCollection = boardLetter.get(letter);
 			
 			/*
-			if(allOpenPositions.size()==0) {
-				//check if we've already seen this one
-				if(finishedBoards.contains(hashCode())) {
-					return;
-				}
+			//check if we've already seen this one
+			if(finishedBoards.size()>0 && finishedBoards.contains(hashCode())) {
+			return true;
 			}
-			*/
+			 */
 			for(Position position : allOpenPositions) {
-				//if(pos==0) {System.out.println("###   " + allOpenPositions.size());}
-				//if(pos==0) {System.out.println("   ###" + position);}
+				if(findOne) {
+					throw new IllegalStateException();
+				}
+				if(wordNum<=0) {System.out.println("###\n"+this);}
 				if(last!=null&&!last.isConnected(position)) {
 					continue;
 				}
@@ -105,11 +109,12 @@ public class Aaron {
 				allOpenPositions.remove(position);
 				setChar(position, letter);
 				positionCollection.add(position);
-				recurse(wordNum, word, pos+1, position);
+				recurse(wordNum, word, pos+1, position, false);
 				allOpenPositions.add(position);
-				positionCollection.remove(position);
 				setChar(position, (char)0);
+				positionCollection.remove(position);
 				setUsed(position, oldUsed);
+				//if(wordNum==0 && pos==0) {break;}
 			}
 			for(Position position : positionCollection) {
 				if(last!=null&&!last.isConnected(position)) {
@@ -119,9 +124,15 @@ public class Aaron {
 				if(oldUsed==ALREADY_USED) {
 					continue;
 				}
-				recurse(wordNum, word, pos+1, position);
+				boolean found = recurse(wordNum, word, pos+1, position, findOne);
+				/*
+				if(found && findOne) {
+					return true;
+				}
+				*/
 				setUsed(position, oldUsed);
 			}
+			return false;
 		}
 		@Override
 		public String toString() {
@@ -177,9 +188,12 @@ public class Aaron {
 		public String toString() {
 			return y + ", " + x;
 		}
+		//not needed, really just needed for repeatability
+		@Override
+		public int hashCode() {
+			return y*4+(x+2)%4;
+		}
 	}
-
-	/*
 	private String[] words = new String[] { "assorters", "assessor", "assorter", "snorters", "sporters", "asserts", "assorts",
                                 "porters", "possess", "possets", "posters", "rosters", "sardars", "sarsars", "serosas", "sirdars", "snorers",
                                 "snorter", "sorters", "sporter", "arsons", "assais", "assert", "assess", "assets", "assort", "darers", "porter",
@@ -195,7 +209,7 @@ public class Aaron {
                                 "ops", "ore", "ors", "ort", "ose", "rad", "ran", "ras", "res", "ret", "ria", "sad", "ser", "set", "sir", "son",
                                 "sop", "sos", "sri", "ad", "ai", "an", "ar", "as", "er", "es", "et", "is", "na", "no", "on", "op", "or", "os",
                                 "re", "si", "so" };
-	*/
+	/*
 	private String[] words = new String[] {
 		"reindeers", "beadiest", "bedstead", "breading", "debaters", "digester", "dingiest", "readiest", "rebaters", "redigest",
 		"reindeer", "steadied", "beading", "beaters", "berates", "braided", "breaded", "dabster", "debased", "debaser",
@@ -233,42 +247,32 @@ public class Aaron {
 		"tas", "tea", "tee", "ab", "ad", "ae", "ai", "ar", "as", "at",
 		"ba", "be", "de", "ed", "er", "es", "et", "id", "in", "re",
 		"ta"};
+	*/
 
 
 	private Callback callback = new Callback() {
 		@Override
 		public void run(int wordNum) {
 			/*
-			if(wordNum==1) {
-				System.out.println(board);
-				System.out.println("----");
-				return;
+			if(board.allOpenPositions.isEmpty()) {
+				//stop recursing, just check the rest of the words
+				board.recurse(wordNum, words[wordNum], 0, null, true);
 			}
-			if(wordNum>12) System.out.println(wordNum);
+			*/
 			if(wordNum==words.length) {
 				board.finishedBoards.add(board.hashCode());
 				System.out.println(board);
 				System.out.println("----");
+				System.exit(0);
 				return;
 			}
-			*/
-			board.recurse(wordNum, words[wordNum], 0, null);
+			board.recurse(wordNum, words[wordNum], 0, null, false);
 		}
 	};
 
-	//private static int test=0;
 	public static void main(String[] args) {
 		Aaron aaron = new Aaron();
 		aaron.callback.run(0);
-		/*
-		System.out.println(aaron.board.countPlacedWord("test", 0, Position.getDummyPosition()));
-		//aaron.board.recurse(0, "test", 0, Position.getDummyPosition());
-		//System.out.println(test);
-		for(int i=0;i<2000;i++) {
-			//aaron.board.countPlacedWord("test", 0, Position.getDummyPosition());
-			//aaron.board.recurse(0, "test", 0, Position.getDummyPosition());
-		}
-		*/
 	}
 }
 
