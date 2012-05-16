@@ -80,7 +80,7 @@ public class Aaron {
 			return old;
 		}
 		public boolean recurse(int wordNum, String word, int pos, Position last, boolean findOne) {
-			//System.out.println(wordNum + ", " + pos);
+			if(pos==0&&wordNum==1) {System.out.println("\t"+new java.util.Date()+"\n"+this);}
 			if(pos==word.length()) {
 				callback.run(wordNum+1);
 				return true;
@@ -98,7 +98,6 @@ public class Aaron {
 				if(findOne) {
 					throw new IllegalStateException();
 				}
-				if(wordNum<=0) {System.out.println("###\n"+this);}
 				if(last!=null&&!last.isConnected(position)) {
 					continue;
 				}
@@ -163,6 +162,7 @@ public class Aaron {
 			@Override
 			public boolean isConnected(Position o) {return true;}
 		};
+		private Position() {}
 		static {
 			for(int y=0;y<4;y++) for(int x=0;x<4;x++) {
 				Position position = new Position();
@@ -194,8 +194,8 @@ public class Aaron {
 			return y*4+(x+2)%4;
 		}
 	}
-	private String[] words = new String[] { "assorters", "assessor", "assorter", "snorters", "sporters", "asserts", "assorts",
-                                "porters", "possess", "possets", "posters", "rosters", "sardars", "sarsars", "serosas", "sirdars", "snorers",
+	private String[] words = new String[] { "assorters", "porters", "possets", "assessor", "assorter", "snorters", "sporters", "asserts", "assorts",
+                                "possess", "posters", "rosters", "sardars", "sarsars", "serosas", "sirdars", "snorers",
                                 "snorter", "sorters", "sporter", "arsons", "assais", "assert", "assess", "assets", "assort", "darers", "porter",
                                 "posers", "posses", "posset", "poster", "rasers", "resort", "retros", "roster", "sardar", "sarsar", "sasses",
                                 "serosa", "sirdar", "snorer", "snores", "snorts", "sonars", "sorest", "sorter", "spores", "sports", "stress",
@@ -266,7 +266,7 @@ public class Aaron {
 				System.exit(0);
 				return;
 			}
-			board.recurse(wordNum, words[wordNum], 0, null, false);
+			board.recurse(wordNum, words[wordNum], 0, wordNum==0?new Position():null, false);
 		}
 	};
 
