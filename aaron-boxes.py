@@ -4,7 +4,7 @@ MAX_VALUE=100000
 
 def findSets(totalBoxes, boxNumber, maxValue, sets, total):
 	if boxNumber == 0:
-		if total % 2 == 0 or findTie(totalBoxes, sets, 0, 0, total):
+		if findTie(totalBoxes, sets, 0, 0, total):
 			return False
 		return sets
 	boxNumber-=1
