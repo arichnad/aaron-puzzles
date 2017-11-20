@@ -9,7 +9,8 @@ def findSets(totalBoxes, boxNumber, maxValue, sets, total):
 		return sets
 	boxNumber-=1
 	for i in range(1, maxValue):
-		if totalBoxes == boxNumber+1: print(i)
+	#for i in reversed(range(1, maxValue)) if totalBoxes != boxNumber+1 else range(1, maxValue):
+		#if totalBoxes == boxNumber+1: print(i)
 		sets[boxNumber]=i
 		if findSets(totalBoxes, boxNumber, i, sets, total+i):
 			return sets
@@ -25,5 +26,5 @@ def findTie(boxNumber, sets, totalA, totalB, totalLeft):
 	
 for f in range(1, 10):
 	answer=findSets(f, f, MAX_VALUE, [0 for i in range(f)], 0)
-	print(answer[f-1], answer)
+	print(answer[f-1], list(reversed(answer)))
 
