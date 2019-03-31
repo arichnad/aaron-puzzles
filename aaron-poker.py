@@ -10,6 +10,10 @@ housesHand = set()
 #double monte-carlo
 SCENARIO_COUNT = 10000
 PLAYER_SCENARIO_COUNT = 50
+#RECURSE_DEPTH of 4 is the "adrian method".  TOO SLOW!
+#RECURSE_DEPTH of 0 is the "aaron method"
+#RECURSE_DEPTH of 1 is a hybrid-method.  VERY slow but higher score.
+RECURSE_DEPTH = 1
 
 def pickCards(stage):
 	#the stage# is the same as the number of cards we get back:
@@ -174,39 +178,34 @@ def playerWinsHand(player1Hand, player2Hand):
 
 	return returnWinTie(player1Hand, player2Hand, player1Hand, player2Hand)
 
-#"it estimates this by adding a card to its hand, then drawing until it has 5 cards. then it adds the remaining choices to the house's hands, and draws until the house has [10?] cards. it does this 50 times for each card, and sees which card wins the most"
-def aaronMethod():
-	playerWins=0
-	global playersHand, housesHand
-	for scenario in range(PLAYER_SCENARIO_COUNT):
-		dummyPlayerPool = pickCards(5-len(playersHand))
-		dummyHousePool = pickCards(10-len(housesHand))
-		
-		playersHand |= dummyPlayerPool
-		housesHand |= dummyHousePool
-
-		playerWins+=1 if playerWinsHand(playersHand, housesHand) == PLAYER_1_WINS else 0
-		
-		housesHand -= dummyHousePool
-		playersHand -= dummyPlayerPool
-	
-	return playerWins
-
-def runScenarios(scenarioCount, stage, printIt=False):
+def runScenarios(scenarioCount, stage, recurseDepth, printIt=False):
 	output={PLAYER_1_WINS: 0, PLAYER_2_WINS: 0, TIE_GAME: 0}
 	for scenario in range(scenarioCount):
 		if printIt:
 			#print('starting a scenario')
 			if scenario%10==0:
 				print('.', end='', flush=True)
-		output[runOneScenario(stage, printIt)]+=1
+		output[runOneScenario(stage, recurseDepth, printIt)]+=1
 	return output
 
 
-def runOneScenario(stage, printIt):
+def runOneScenario(stage, recurseDepth, printIt):
 	global remainingDeck, playersHand, housesHand
 	if stage == 6:
 		return playerWinsHand(playersHand, housesHand)
+	elif recurseDepth is not None and recurseDepth == 0:
+		#"hybrid" aaron-method.  once you reach your "recurse depth", then pick out the remaining cards.
+		dummyPlayerPool = pickCards(5-len(playersHand))
+		dummyHousePool = pickCards(10-len(housesHand))
+		playersHand |= dummyPlayerPool
+		housesHand |= dummyHousePool
+		
+		returnValue = playerWinsHand(playersHand, housesHand)
+
+		housesHand -= dummyHousePool
+		playersHand -= dummyPlayerPool
+		
+		return returnValue
 	
 	pool = pickCards(stage)
 	remainingDeck -= pool
@@ -220,12 +219,8 @@ def runOneScenario(stage, printIt):
 			playersHand.add(pickedCard)
 			housesHand |= pool
 			
-			#adrian method is too slow!
-			#playerWins=runScenarios(PLAYER_SCENARIO_COUNT, stage+1)[PLAYER_1_WINS]
+			playerWins=runScenarios(PLAYER_SCENARIO_COUNT, stage+1, RECURSE_DEPTH if recurseDepth is None else recurseDepth - 1)[PLAYER_1_WINS]
 
-			#aaron method:
-			playerWins=aaronMethod()
-			
 			housesHand -= pool
 			playersHand.remove(pickedCard)
 			pool.add(pickedCard)
@@ -243,7 +238,7 @@ def runOneScenario(stage, printIt):
 	playersHand.add(pickedCard)
 	housesHand |= pool
 
-	returnValue = runOneScenario(stage+1, printIt)
+	returnValue = runOneScenario(stage+1, None if recurseDepth is None else recurseDepth - 1, printIt)
 	
 	housesHand -= pool
 	playersHand.remove(pickedCard)
@@ -289,6 +284,6 @@ def printHand(hand):
 
 
 print(printHand(remainingDeck))
-print(runScenarios(SCENARIO_COUNT, 1, True))
+print(runScenarios(SCENARIO_COUNT, 1, None, True))
 print(printHand(remainingDeck))
 
