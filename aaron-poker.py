@@ -2,7 +2,29 @@
 
 import random
 
-remainingDeck = set(range(52))
+class Card:
+	def __init__(self, suit, value):
+		self.suit = suit
+		self.value = value
+	@classmethod
+	def fromIntegerCard(cls, integerCard):
+		suit=integerCard//13
+		return cls(suit, integerCard-suit*13)
+	
+	def __eq__(self, other):
+		return self.suit==other.suit and self.value==other.value
+	def __hash__(self):
+		#heh.  kinda weird to use 13 here, but why not?
+		return hash(self.suit)*13+hash(self.value)
+	def __repr__(self):
+		#return str((list(range(2,10))+['t','j','q','k','a'])[self.value]) + chr([0x2660,0x2663,0x2665,0x2666][self.suit])
+		cardValue = self.value
+		if cardValue == 12: cardValue = -1
+		cardValue += 1
+		if cardValue >= 11: cardValue += 1
+		return chr(0x1f0a1 + self.suit*16 + cardValue)
+
+remainingDeck = set([Card.fromIntegerCard(integerCard) for integerCard in range(52)])
 
 playersHand = set()
 housesHand = set()
@@ -30,7 +52,7 @@ def straightFlushHand(hand):
 				return cards
 
 def flushHandSuit(hand, suit):
-	hand = set(card for card in hand if card//13 == suit)
+	hand = set(card for card in hand if card.suit == suit)
 	if len(hand)<5: return None
 	return sortedHand(hand)[:5]
 
@@ -41,7 +63,7 @@ def flushHand(hand):
 	return None
 
 def straightHand(hand):
-	valuesHand = set(card%13 for card in hand)
+	valuesHand = set(card.value for card in hand)
 	length=0
 	for cardValue in reversed(range(-1,13)):
 		if cardValue == -1: cardValue = 12
@@ -54,7 +76,7 @@ def straightHand(hand):
 			outputHand = []
 			for cardValue in reversed(range(cardValue, cardValue+5)):
 				if cardValue == -1: cardValue = 12
-				outputHand.append([card for card in hand if card%13==cardValue][0])
+				outputHand.append([card for card in hand if card.value==cardValue][0])
 			return outputHand
 
 def ofKindHands(hand):
@@ -63,20 +85,18 @@ def ofKindHands(hand):
 	suitCount = [0 for value in range(4)]
 	suitOutput = []
 	for card in hand:
-		cardSuit=card//13
-		cardValue=card-cardSuit*13
-		valueCount[cardValue]+=1
-		suitCount[cardSuit]+=1
+		valueCount[card.value]+=1
+		suitCount[card.suit]+=1
 	for cardValue in reversed(range(13)):
 		current = valueCount[cardValue]
 		if current >= 2:
 			if current not in valueOutput:
 				valueOutput[current] = []
-			valueOutput[current].append([card for card in hand if card%13==cardValue])
+			valueOutput[current].append([card for card in hand if card.value==cardValue])
 	for cardSuit in range(4):
 		current = suitCount[cardValue]
 		if current >= 5:
-			suitOutput.append([card for card in hand if card//13==cardSuit])
+			suitOutput.append([card for card in hand if card.suit==cardSuit])
 	return valueOutput, suitOutput
 
 
@@ -94,10 +114,8 @@ def highCard(player1Hand, player2Hand):
 	player2Hand = sortedHand(player2Hand)
 	#zip with different sizes, it stops at the shortest list.  that's what we want
 	for player1Card, player2Card in zip(player1Hand, player2Hand):
-		player1Card%=13
-		player2Card%=13
-		if player1Card == player2Card: continue
-		return PLAYER_1_WINS if player1Card > player2Card else PLAYER_2_WINS
+		if player1Card.value == player2Card.value: continue
+		return PLAYER_1_WINS if player1Card.value > player2Card.value else PLAYER_2_WINS
 	return TIE_GAME
 
 def returnWinTie(player1Hand, player2Hand, player1FullHand, player2FullHand):
@@ -249,21 +267,12 @@ def runOneScenario(stage, recurseDepth, printIt):
 	return returnValue
 
 def sortedHand(hand):
-	return list(sorted(hand, reverse=True, key = lambda card : card%13))
+	return list(sorted(hand, reverse=True, key = lambda card : card.value))
 
-def printCard(cardNumber):
-	cardSuit = cardNumber//13
-	#don't need to divide twice
-	cardValue = cardNumber - cardSuit * 13
-	#return str((list(range(2,10))+['t','j','q','k','a'])[cardValue]) + chr([0x2660,0x2663,0x2665,0x2666][cardSuit])
-	if cardValue == 12: cardValue = -1
-	cardValue += 1
-	if cardValue >= 11: cardValue += 1
-	return chr(0x1f0a1 + cardSuit*16 + cardValue)
 
 def printHand(hand):
 	hand=sortedHand(hand)
-	return ' '.join([printCard(cardNumber) for cardNumber in hand])
+	return ' '.join([str(card) for card in hand])
 
 #for scenario in range(1000):
 	#playersHandTest = pickCards(5)
